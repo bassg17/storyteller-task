@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from time import perf_counter
 from uuid import uuid4
 
+from app.ai.client import format_ai_exception
 from app.ai.pipeline import AIPipeline
 from app.core.config import Settings
 from app.core.decision_engine import apply_policy
@@ -87,9 +89,12 @@ class ContentValidator:
     async def _run_ai(self, normalized) -> dict[str, AIResult]:
         try:
             pipeline = self.ai_pipeline or AIPipeline.from_settings(self.settings)
-            return await pipeline.validate(normalized)
+            return await asyncio.wait_for(
+                pipeline.validate(normalized),
+                timeout=self.settings.request_timeout_seconds,
+            )
         except Exception as exc:
-            reason = f"AI validation failed closed: {exc.__class__.__name__}"
+            reason = f"AI validation failed closed: {format_ai_exception(exc)}"
             return {
                 story.story_id: AIResult(confidence_score=0.0, reasons=[reason])
                 for story in normalized.stories

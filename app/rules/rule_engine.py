@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import ipaddress
 from dataclasses import dataclass
 from urllib.parse import urlparse
@@ -17,7 +16,6 @@ class AssetCheck:
     page: NormalizedPage
     status_code: int | None
     content_type: str
-    sha256: str | None
     error: str | None = None
 
 
@@ -35,7 +33,6 @@ class RuleEngine:
         pages = [page for story in payload.stories for page in story.pages]
         asset_checks = await self._check_assets(pages)
         self._apply_asset_results(results, asset_checks)
-        self._apply_duplicate_results(results, asset_checks)
 
         for result in results.values():
             result.rule_score = self._score(result)
@@ -85,7 +82,7 @@ class RuleEngine:
 
     async def _check_asset(self, client: httpx.AsyncClient, page: NormalizedPage) -> AssetCheck:
         if _is_malicious_or_invalid_http_url(page.asset_url):
-            return AssetCheck(page=page, status_code=None, content_type="", sha256=None)
+            return AssetCheck(page=page, status_code=None, content_type="")
 
         try:
             response = await client.get(page.asset_url)
@@ -94,7 +91,6 @@ class RuleEngine:
                 page=page,
                 status_code=None,
                 content_type="",
-                sha256=None,
                 error=f"asset fetch failed: {exc.__class__.__name__}",
             )
 
@@ -105,16 +101,13 @@ class RuleEngine:
                 page=page,
                 status_code=response.status_code,
                 content_type=content_type,
-                sha256=None,
                 error="asset exceeds maximum validation download size",
             )
 
-        digest = hashlib.sha256(content).hexdigest() if response.status_code == 200 else None
         return AssetCheck(
             page=page,
             status_code=response.status_code,
             content_type=content_type,
-            sha256=digest,
         )
 
     def _apply_asset_results(
@@ -136,23 +129,6 @@ class RuleEngine:
 
             if check.error:
                 result.critical_failures.append(f"{check.page.internal_id}: {check.error}")
-
-    def _apply_duplicate_results(
-        self, results: dict[str, RuleResult], asset_checks: list[AssetCheck]
-    ) -> None:
-        hashes: dict[str, list[NormalizedPage]] = {}
-        for check in asset_checks:
-            if check.sha256:
-                hashes.setdefault(check.sha256, []).append(check.page)
-
-        for duplicate_pages in hashes.values():
-            if len(duplicate_pages) < 2:
-                continue
-            page_refs = ", ".join(page.internal_id for page in duplicate_pages)
-            for page in duplicate_pages:
-                results[page.story_id].critical_failures.append(
-                    f"{page.internal_id}: duplicate asset detected in tenant batch ({page_refs})"
-                )
 
     def _score(self, result: RuleResult) -> float:
         score = 100.0

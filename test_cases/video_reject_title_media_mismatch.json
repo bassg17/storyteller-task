@@ -1,0 +1,27 @@
+{
+    "tenant_id": "tenant_test_001",
+    "tenant_name": "Storyteller Test Tenant",
+    "last_synced_at": "2026-06-18T21:30:00Z",
+    "stories": [
+      {
+        "story_id": "video_mismatch_001",
+        "story_title": "Penguin FC announces starting lineup against Seals United",
+        "pages": [
+          {
+            "page_id": "page_1",
+            "type": "video",
+            "asset_url": "https://storyteller-task-1707.s3.us-east-1.amazonaws.com/54321-476721222_medium.mp4",
+            "action": {
+              "cta": "View football lineup",
+              "url": "https://example.com/football-lineup"
+            }
+          }
+        ],
+        "context": {
+          "categories": ["Penguin FC", "Seals United", "Football lineup"],
+          "tenant": "Storyteller Test Tenant",
+          "publish_date": "2026-06-18"
+        }
+      }
+    ]
+  }

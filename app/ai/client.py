@@ -42,3 +42,30 @@ def normalize_str_list(value: Any) -> tuple[str, ...]:
     if not isinstance(value, list):
         return ()
     return tuple(str(item).strip() for item in value if str(item).strip())
+
+
+def coerce_bool(value: Any, default: bool = True) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "yes", "1"}:
+            return True
+        if normalized in {"false", "no", "0"}:
+            return False
+    return default
+
+
+def format_ai_exception(exc: Exception) -> str:
+    message = str(exc).replace("\n", " ").strip()
+    if not message:
+        return exc.__class__.__name__
+    return f"{exc.__class__.__name__}: {_redact_secrets(message[:500])}"
+
+
+def _redact_secrets(message: str) -> str:
+    words = message.split()
+    redacted_words = [
+        "[redacted]" if word.startswith(("sk-", "AIza")) else word for word in words
+    ]
+    return " ".join(redacted_words)

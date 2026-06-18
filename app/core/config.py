@@ -15,18 +15,29 @@ class Settings(BaseSettings):
     openai_ocr_model: str = "gpt-4o-mini"
     openai_vision_model: str = "gpt-4o-mini"
     openai_semantic_model: str = "gpt-4o-mini"
+    openai_moderation_model: str = "omni-moderation-latest"
 
     asset_timeout_seconds: float = 2.0
     asset_max_download_bytes: int = 5_000_000
     ai_timeout_seconds: float = 4.0
     request_timeout_seconds: float = 5.0
 
-    max_stories_per_request: int = Field(default=50, ge=1)
-    max_pages_per_story: int = Field(default=20, ge=1)
+    max_stories_per_request: int = Field(
+        default=50,
+        ge=1,
+        validation_alias=AliasChoices("CONTENT_GATEWAY_MAX_STORIES_PER_REQUEST"),
+    )
+    max_pages_per_story: int = Field(
+        default=20,
+        ge=1,
+        validation_alias=AliasChoices("CONTENT_GATEWAY_MAX_PAGES_PER_STORY"),
+    )
     max_video_frames: int = Field(default=2, ge=1, le=5)
 
     ai_confidence_threshold: float = Field(default=0.90, ge=0.0, le=1.0)
     final_score_threshold: float = Field(default=85.0, ge=0.0, le=100.0)
+    sexual_content_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
+    explicit_content_threshold: float = Field(default=0.01, ge=0.0, le=1.0)
 
     model_config = SettingsConfigDict(
         env_file=".env",

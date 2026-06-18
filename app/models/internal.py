@@ -69,6 +69,20 @@ class SemanticResult:
     confidence: float = 0.0
     risk_flags: tuple[str, ...] = ()
     reasoning: str = ""
+    media_matches_title: bool = True
+    media_matches_categories: bool = True
+    cta_matches_url: bool = True
+    cta_matches_title: bool = True
+    media_reasoning: str = ""
+
+
+@dataclass
+class SafetyResult:
+    flagged: bool = False
+    categories: tuple[str, ...] = ()
+    category_scores: dict[str, float] = field(default_factory=dict)
+    confidence: float = 1.0
+    reasons: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -81,6 +95,7 @@ class AIResult:
     risk_flags: list[str] = field(default_factory=list)
     reasons: list[str] = field(default_factory=list)
     nsfw_detected: bool = False
+    safety_results: list[SafetyResult] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

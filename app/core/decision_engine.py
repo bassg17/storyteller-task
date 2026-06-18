@@ -14,8 +14,8 @@ def apply_policy(
     if rule_result.critical_failures:
         rejection_reasons.extend(rule_result.critical_failures)
 
-    if ai_result.nsfw_detected:
-        rejection_reasons.append("NSFW detected")
+    if ai_result.nsfw_detected or any(result.flagged for result in ai_result.safety_results):
+        rejection_reasons.append("Unsafe or explicit media content detected")
 
     if ai_result.confidence_score < settings.ai_confidence_threshold:
         rejection_reasons.append(

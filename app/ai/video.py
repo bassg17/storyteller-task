@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import os
 import tempfile
+from dataclasses import dataclass
 
 import cv2
 import httpx
@@ -10,12 +11,19 @@ import httpx
 from app.core.config import Settings
 
 
+@dataclass(frozen=True)
+class VideoFrame:
+    frame_index: int
+    source_position: int
+    data_url: str
+
+
 class VideoFrameSampler:
     def __init__(self, settings: Settings, client: httpx.AsyncClient | None = None) -> None:
         self.settings = settings
         self.client = client
 
-    async def sample(self, video_url: str) -> tuple[str, ...]:
+    async def sample(self, video_url: str) -> tuple[VideoFrame, ...]:
         owned_client = self.client is None
         client = self.client or httpx.AsyncClient(
             follow_redirects=True,
@@ -34,7 +42,7 @@ class VideoFrameSampler:
                 await client.aclose()
 
 
-def _sample_video_bytes(content: bytes, frame_count: int) -> tuple[str, ...]:
+def _sample_video_bytes(content: bytes, frame_count: int) -> tuple[VideoFrame, ...]:
     fd, path = tempfile.mkstemp(suffix=".mp4")
     try:
         with os.fdopen(fd, "wb") as handle:
@@ -47,8 +55,8 @@ def _sample_video_bytes(content: bytes, frame_count: int) -> tuple[str, ...]:
                 return ()
 
             positions = _frame_positions(total_frames, frame_count)
-            images: list[str] = []
-            for position in positions:
+            frames: list[VideoFrame] = []
+            for frame_index, position in enumerate(positions):
                 capture.set(cv2.CAP_PROP_POS_FRAMES, position)
                 success, frame = capture.read()
                 if not success:
@@ -57,8 +65,14 @@ def _sample_video_bytes(content: bytes, frame_count: int) -> tuple[str, ...]:
                 if not encoded:
                     continue
                 b64 = base64.b64encode(buffer.tobytes()).decode("ascii")
-                images.append(f"data:image/jpeg;base64,{b64}")
-            return tuple(images)
+                frames.append(
+                    VideoFrame(
+                        frame_index=frame_index,
+                        source_position=position,
+                        data_url=f"data:image/jpeg;base64,{b64}",
+                    )
+                )
+            return tuple(frames)
         finally:
             capture.release()
     finally:

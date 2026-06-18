@@ -1,0 +1,27 @@
+{
+    "tenant_id": "tenant_test_001",
+    "tenant_name": "Storyteller Test Tenant",
+    "last_synced_at": "2026-06-18T21:30:00Z",
+    "stories": [
+      {
+        "story_id": "image_mismatch_001",
+        "story_title": "Last 5 meetings: tunisia vs Sweden",
+        "pages": [
+          {
+            "page_id": "page_1",
+            "type": "image",
+            "asset_url": "https://storyteller-task-1707.s3.us-east-1.amazonaws.com/images.jfif",
+            "action": {
+              "cta": "match report",
+              "url": "https://example.com/match report"
+            }
+          }
+        ],
+        "context": {
+          "categories": ["tunisia", "sweden", "Matchday"],
+          "tenant": "Storyteller Test Tenant",
+          "publish_date": "2026-06-18"
+        }
+      }
+    ]
+  }
